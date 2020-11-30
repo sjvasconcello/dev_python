@@ -1,3 +1,12 @@
+"""User admin classes"""
+
+# Django
 from django.contrib import admin
 
-# Register your models here.
+# Models
+from posts.models import Post
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    """Post Admin"""
+    list_display = ("pk","title","profile")
