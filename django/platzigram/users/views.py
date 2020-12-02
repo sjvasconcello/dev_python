@@ -12,6 +12,10 @@ from users.models import Profile
 
 # views here.
 
+def update_profile(request):
+    """Update a user's profile view."""
+    return render(request, "users/update_profile.html")
+
 def login_view(request):
     """Login view."""
 
