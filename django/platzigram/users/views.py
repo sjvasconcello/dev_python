@@ -2,16 +2,17 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView
+from django.views.generic import DetailView, FormView, UpdateView
 from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.urls import reverse_lazy
 
 # Models
 from django.contrib.auth.models import User
 from posts.models import Post
+from users.models import Profile
 
 # Forms
-from users.forms import ProfileForm, SignupForm
+from users.forms import SignupForm
 
 
 class UserDetailView(LoginRequiredMixin ,DetailView):
@@ -29,38 +30,31 @@ class UserDetailView(LoginRequiredMixin ,DetailView):
         context["posts"] = Post.objects.filter(user=user).order_by("-created")
         return context
 
+class SignupView(FormView):
+    """Users sign up views"""
+    template_name = "users/signup.html"
+    form_class = SignupForm
+    success_url = reverse_lazy("users:login")
 
-@login_required
-def update_profile(request):
-    """Update a user's profile view."""
+    def form_valid(self, form):
+        """Save form data."""
+        form.save()
+        return super().form_valid(form)
 
-    profile = request.user.profile
+class UpdateProfileView(LoginRequiredMixin, UpdateView):
+    """Update profile view"""
+    template_name = "users/update_profile.html"
+    model = Profile
+    fields = ["website", "biography", "phone_number","picture"]
 
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES)
-        if form.is_valid():
-            data = form.cleaned_data
-            profile.website = data["website"]
-            profile.phone_number = data["phone_number"]
-            profile.picture = data["picture"]
-            profile.biography = data["biography"]
-            profile.save()
+    def get_object(self):
+        """Return user's profile"""
+        return self.request.user.profile
 
-            url = reverse("users:detail", kwargs={
-                          "username": request.user.username})
-            return redirect(url)
-    else:
-        form = ProfileForm()
-
-    return render(
-        request=request,
-        template_name="users/update_profile.html",
-        context={
-            "profile": profile,
-            "user": request.user,
-            "form": form
-        })
-
+    def get_success_url(self):
+        """Return to user's profile."""
+        username = self.objects.user.username
+        return reverse("users:detail", kwargs={"username": username} )
 
 def login_view(request):
     """Login view."""
@@ -76,23 +70,6 @@ def login_view(request):
             return render(request, "users/login.html", {"error": "Invalid username or password"})
 
     return render(request, "users/login.html")
-
-
-def signup(request):
-    """Sign up views."""
-    if request.method == "POST":
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("users:login")
-    else:
-        form = SignupForm()
-
-    return render(
-        request=request,
-        template_name="users/signup.html",
-        context={"form": form}
-    )
 
 
 @login_required

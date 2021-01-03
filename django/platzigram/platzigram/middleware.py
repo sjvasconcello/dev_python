@@ -22,7 +22,7 @@ class ProfileCompletionMiddleware:
             if not request.user.is_staff:
                 profile = request.user.profile
                 if not profile.picture or not profile.biography:
-                    if request.path != reverse("update_profile"):
-                        return redirect("update_profile")
+                    if request.path != [reverse("users:update"), reverse("users:logout")]:
+                        return redirect("users:update")
         response = self.get_response(request)
         return response
